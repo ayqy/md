@@ -1,7 +1,6 @@
 import path from 'node:path'
 import process from 'node:process'
 
-import { cloudflare } from '@cloudflare/vite-plugin'
 import tailwindcss from '@tailwindcss/vite'
 import vue from '@vitejs/plugin-vue'
 import { visualizer } from 'rollup-plugin-visualizer'
@@ -14,6 +13,8 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 
 import { utoolsLocalAssetsPlugin } from './plugins/vite-plugin-utools-local-assets'
 
+type CloudflarePluginFactory = typeof import('@cloudflare/vite-plugin')['cloudflare']
+
 const isNetlify = process.env.SERVER_ENV === `NETLIFY`
 const isUTools = process.env.SERVER_ENV === `UTOOLS`
 const isCfWorkers = process.env.CF_WORKERS === `1`
@@ -21,8 +22,13 @@ const isCfPages = process.env.CF_PAGES === `1`
 
 const base = isNetlify || isCfWorkers || isCfPages ? `/` : isUTools ? `./` : `/md/`
 
-export default defineConfig(({ mode }) => {
+export default defineConfig(async ({ mode }) => {
   const env = loadEnv(mode, process.cwd())
+  let cloudflarePlugin: ReturnType<CloudflarePluginFactory> | null = null
+  if (isCfWorkers) {
+    const { cloudflare } = await import('@cloudflare/vite-plugin')
+    cloudflarePlugin = cloudflare()
+  }
 
   return {
     base,
@@ -30,7 +36,7 @@ export default defineConfig(({ mode }) => {
     envPrefix: [`VITE_`, `CF_`],
     plugins: [
       vue(),
-      isCfWorkers && cloudflare(),
+      ...(cloudflarePlugin ? [cloudflarePlugin] : []),
       tailwindcss(),
       vueDevTools({
         launchEditor: env.VITE_LAUNCH_EDITOR ?? `code`,
@@ -56,7 +62,10 @@ export default defineConfig(({ mode }) => {
       isUTools && utoolsLocalAssetsPlugin(),
     ],
     resolve: {
-      alias: { '@': path.resolve(__dirname, `./src`) },
+      alias: {
+        '@': path.resolve(__dirname, `./src`),
+        '@md/web': path.resolve(__dirname, `./src`),
+      },
     },
     css: { devSourcemap: true },
     build: {
@@ -67,7 +76,7 @@ export default defineConfig(({ mode }) => {
           entryFileNames: `static/js/md-[name]-[hash].js`,
           assetFileNames: `static/[ext]/md-[name]-[hash].[ext]`,
           globals: { mermaid: `mermaid` },
-          manualChunks(id) {
+          manualChunks(id: string) {
             if (id.includes(`node_modules`)) {
               if (id.includes(`katex`))
                 return `katex`

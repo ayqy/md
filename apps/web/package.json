@@ -8,8 +8,9 @@
   "scripts": {
     "start": "pnpm run dev",
     "dev": "vite --host",
-    "build": "run-p type-check \"build:only {@}\" --",
+    "build": "run-p type-check \"build:only {@}\" \"build:host\" --",
     "build:only": "vite build",
+    "build:host": "vite build --config vite.host.config.ts",
     "build:h5-netlify": "run-p type-check \"build:h5-netlify:only {@}\" --",
     "build:h5-netlify:only": "cross-env SERVER_ENV=NETLIFY vite build",
     "build:utools": "cross-env SERVER_ENV=UTOOLS vite build --outDir ../utools/dist --emptyOutDir",

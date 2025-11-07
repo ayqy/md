@@ -14,7 +14,9 @@
     "./utils": "./src/utils/index.ts",
     "./utils/*": "./src/utils/*.ts",
     "./editor": "./src/editor/index.ts",
-    "./editor/*": "./src/editor/*.ts"
+    "./editor/*": "./src/editor/*.ts",
+    "./integration": "./src/integration/index.ts",
+    "./integration/*": "./src/integration/*.ts"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.19.1",
@@ -37,7 +39,10 @@
     "remark-parse": "^11.0.0",
     "remark-stringify": "^11.0.0",
     "unified": "^11.0.5",
-    "unist-util-visit": "^5.0.0"
+    "unist-util-visit": "^5.0.0",
+    "pinia": "^3.0.1",
+    "@md/core": "workspace:*",
+    "vue": "^3.5.22"
   },
   "devDependencies": {
     "@md/config": "workspace:*",

@@ -6,6 +6,7 @@ import { useExportStore } from '@/stores/export'
 import { useRenderStore } from '@/stores/render'
 import { useThemeStore } from '@/stores/theme'
 import { useUIStore } from '@/stores/ui'
+import { useIntegrationStore } from '@/stores/integration'
 import { addPrefix, generatePureHTML, processClipboardContent, store } from '@/utils'
 import FormatDropdown from './FormatDropdown.vue'
 
@@ -16,11 +17,13 @@ const themeStore = useThemeStore()
 const renderStore = useRenderStore()
 const uiStore = useUIStore()
 const exportStore = useExportStore()
+const integrationStore = useIntegrationStore()
 
 const { editor } = storeToRefs(editorStore)
 const { output } = storeToRefs(renderStore)
 const { primaryColor } = storeToRefs(themeStore)
 const { isOpenRightSlider } = storeToRefs(uiStore)
+const { featureFlags } = storeToRefs(integrationStore)
 
 // Editor refresh function
 function editorRefresh() {
@@ -250,7 +253,7 @@ async function copy() {
     </div>
 
     <!-- 右侧操作区 -->
-    <div class="space-x-2 flex flex-wrap items-center">
+    <div v-if="featureFlags.exportPanel" class="space-x-2 flex flex-wrap items-center">
       <!-- 复制按钮组 -->
       <div
         class="bg-background space-x-1 text-background-foreground flex items-center border rounded-md"
@@ -288,7 +291,7 @@ async function copy() {
       </div>
 
       <!-- 文章信息（移动端隐藏） -->
-      <PostInfo class="hidden md:inline-flex" />
+      <PostInfo v-if="featureFlags.postManagement" class="hidden md:inline-flex" />
 
       <!-- 编辑器设置按钮 -->
       <Popover>
@@ -317,7 +320,7 @@ async function copy() {
   <AboutDialog :visible="aboutDialogVisible" @close="aboutDialogVisible = false" />
   <FundDialog :visible="fundDialogVisible" @close="fundDialogVisible = false" />
   <EditorStateDialog :visible="editorStateDialogVisible" @close="editorStateDialogVisible = false" />
-  <AIImageGeneratorPanel v-model:open="uiStore.aiImageDialogVisible" />
+  <AIImageGeneratorPanel v-if="featureFlags.ai" v-model:open="uiStore.aiImageDialogVisible" />
 </template>
 
 <style lang="less" scoped>

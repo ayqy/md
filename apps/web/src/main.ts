@@ -1,9 +1,4 @@
-import { initializeMermaid } from '@md/core/utils'
-import { createPinia } from 'pinia'
-import { createApp } from 'vue'
-import App from './App.vue'
-
-import { setupComponents } from './utils/setup-components'
+import { mountEditorApp } from './bootstrap/editorApp'
 
 import 'vue-sonner/style.css'
 
@@ -11,13 +6,12 @@ import 'vue-sonner/style.css'
 import '@/assets/index.css'
 import '@/assets/less/theme.less'
 
-// 异步初始化 mermaid，避免初始化顺序问题
-initializeMermaid().catch(console.error)
-
-setupComponents()
-
-const app = createApp(App)
-
-app.use(createPinia())
-
-app.mount(`#app`)
+const el = document.getElementById(`app`)
+if (!el) {
+  console.error(`[main] cannot find element #app`)
+}
+else {
+  mountEditorApp({ el }).catch((err) => {
+    console.error(`[main] failed to mount editor app`, err)
+  })
+}

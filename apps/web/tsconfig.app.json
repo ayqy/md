@@ -3,7 +3,14 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@md/web": ["./src/index.ts"],
+      "@md/web/*": ["./src/*"],
+      "@md/shared": ["../../packages/shared/src/index.ts"],
+      "@md/shared/*": ["../../packages/shared/src/*"],
+      "@md/core": ["../../packages/core/src/index.ts"],
+      "@md/core/*": ["../../packages/core/src/*"],
+      "vue": ["./node_modules/vue/dist/vue.d.ts"]
     }
   },
   "include": [
@@ -12,6 +19,10 @@
     "src/**/*.vue",
     "components.d.ts",
     "auto-imports.d.ts",
-    "./.wxt/wxt.d.ts"
+    "./.wxt/wxt.d.ts",
+    "../../packages/shared/src/**/*.ts",
+    "../../packages/shared/src/**/*.tsx",
+    "../../packages/core/src/**/*.ts",
+    "../../packages/core/src/**/*.tsx"
   ]
 }

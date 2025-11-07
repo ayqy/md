@@ -18,6 +18,7 @@ import { SearchTab } from '@/components/ui/search-tab'
 import { useCssEditorStore } from '@/stores/cssEditor'
 import { useEditorStore } from '@/stores/editor'
 import { usePostStore } from '@/stores/post'
+import { useIntegrationStore } from '@/stores/integration'
 import { useRenderStore } from '@/stores/render'
 import { useThemeStore } from '@/stores/theme'
 import { useUIStore } from '@/stores/ui'
@@ -30,6 +31,7 @@ const renderStore = useRenderStore()
 const themeStore = useThemeStore()
 const uiStore = useUIStore()
 const cssEditorStore = useCssEditorStore()
+const integrationStore = useIntegrationStore()
 
 const { editor } = storeToRefs(editorStore)
 const { output } = storeToRefs(renderStore)
@@ -42,9 +44,12 @@ const {
   isOpenPostSlider,
   isOpenRightSlider,
   isOpenConfirmDialog,
+  isShowCssEditor,
 } = storeToRefs(uiStore)
+const { featureFlags, readOnly } = storeToRefs(integrationStore)
 
-const { toggleShowUploadImgDialog } = uiStore
+const { toggleShowUploadImgDialog, toggleAIDialog, toggleAIImageDialog } = uiStore
+const { emitChange } = integrationStore
 
 // Editor refresh function
 function editorRefresh() {
@@ -79,6 +84,47 @@ watch(output, () => {
     }
   })
 })
+
+watch(
+  () => featureFlags.value.postManagement,
+  (enabled) => {
+    if (!enabled) {
+      isOpenPostSlider.value = false
+    }
+  },
+  { immediate: true },
+)
+
+watch(
+  () => featureFlags.value.cssEditor,
+  (enabled) => {
+    if (!enabled) {
+      isShowCssEditor.value = false
+    }
+  },
+  { immediate: true },
+)
+
+watch(
+  () => featureFlags.value.uploadImage,
+  (enabled) => {
+    if (!enabled) {
+      toggleShowUploadImgDialog(false)
+    }
+  },
+  { immediate: true },
+)
+
+watch(
+  () => featureFlags.value.ai,
+  (enabled) => {
+    if (!enabled) {
+      toggleAIDialog(false)
+      toggleAIImageDialog(false)
+    }
+  },
+  { immediate: true },
+)
 
 const backLight = ref(false)
 const isCoping = ref(false)
@@ -116,6 +162,7 @@ const previewRef = useTemplateRef<HTMLDivElement>(`previewRef`)
 const timeout = ref<NodeJS.Timeout>()
 const codeMirrorView = ref<EditorView | null>(null)
 const themeCompartment = new Compartment()
+const readOnlyCompartment = new Compartment()
 
 // 使浏览区与编辑区滚动条建立同步联系
 function leftAndRightScroll() {
@@ -251,6 +298,9 @@ onMounted(() => {
 })
 
 async function beforeImageUpload(file: File) {
+  if (!featureFlags.value.uploadImage) {
+    return false
+  }
   const checkResult = checkImage(file)
   if (!checkResult.ok) {
     toast.error(checkResult.msg)
@@ -304,6 +354,10 @@ async function uploadImage(
   cb?: { (url: any, data: string): void, (arg0: unknown): void } | undefined,
   applyUrl?: boolean,
 ) {
+  if (!featureFlags.value.uploadImage) {
+    toast.error(`当前实例已禁用图片上传`)
+    return
+  }
   try {
     isImgLoading.value = true
     // compress image if useCompression is true
@@ -418,9 +472,18 @@ const codeMirrorWrapper = useTemplateRef<ComponentPublicInstance<HTMLDivElement>
 function mdLocalToRemote() {
   const dom = codeMirrorWrapper.value!
 
-  dom.ondragover = evt => evt.preventDefault()
+  dom.ondragover = (evt) => {
+    evt.preventDefault()
+    if (!featureFlags.value.uploadImage) {
+      return
+    }
+  }
   dom.ondrop = async (evt) => {
     evt.preventDefault()
+    if (!featureFlags.value.uploadImage) {
+      toast.error(`当前实例已禁用图片上传`)
+      return
+    }
     if (evt.dataTransfer == null || !Array.isArray(evt.dataTransfer.items)) {
       return
     }
@@ -463,6 +526,7 @@ function createFormTextArea(dom: HTMLDivElement) {
         onSearch: openSearchWithSelection,
       }),
       themeCompartment.of(theme(isDark.value)),
+      readOnlyCompartment.of(EditorView.editable.of(!readOnly.value)),
       EditorView.updateListener.of((update) => {
         if (update.docChanged) {
           const value = update.state.doc.toString()
@@ -478,6 +542,8 @@ function createFormTextArea(dom: HTMLDivElement) {
             currentPost.updateDatetime = new Date()
             currentPost.content = value
           }, 300)
+
+          emitChange(value)
         }
       }),
     ],
@@ -577,6 +643,14 @@ watch(isDark, () => {
   }
 })
 
+watch(readOnly, () => {
+  if (codeMirrorView.value) {
+    codeMirrorView.value.dispatch({
+      effects: readOnlyCompartment.reconfigure(EditorView.editable.of(!readOnly.value)),
+    })
+  }
+})
+
 // 监听当前文章切换，更新编辑器内容
 watch(currentPostIndex, () => {
   if (!codeMirrorView.value)
@@ -652,13 +726,14 @@ onUnmounted(() => {
       >
         <ResizablePanelGroup direction="horizontal">
           <ResizablePanel
+            v-if="featureFlags.postManagement"
             :default-size="15"
             :max-size="isOpenPostSlider ? 30 : 0"
             :min-size="isOpenPostSlider ? 10 : 0"
           >
             <PostSlider />
           </ResizablePanel>
-          <ResizableHandle class="hidden md:block" />
+          <ResizableHandle v-if="featureFlags.postManagement" class="hidden md:block" />
           <ResizablePanel class="flex">
             <div
               v-show="!isMobile || (isMobile && showEditor)"
@@ -671,6 +746,7 @@ onUnmounted(() => {
             >
               <SearchTab v-if="codeMirrorView" ref="searchTabRef" :editor-view="codeMirrorView as any" />
               <SidebarAIToolbar
+                v-if="featureFlags.ai"
                 :is-mobile="isMobile"
                 :show-editor="showEditor"
               />
@@ -720,7 +796,7 @@ onUnmounted(() => {
 
               <FloatingToc />
             </div>
-            <CssEditor />
+            <CssEditor v-if="featureFlags.cssEditor" />
             <RightSlider />
           </ResizablePanel>
         </ResizablePanelGroup>
@@ -740,7 +816,7 @@ onUnmounted(() => {
 
       <!-- AI工具箱已移到侧边栏，这里不再显示 -->
 
-      <UploadImgDialog @upload-image="uploadImage" />
+      <UploadImgDialog v-if="featureFlags.uploadImage" @upload-image="uploadImage" />
 
       <InsertFormDialog />
 
