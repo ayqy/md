@@ -22,7 +22,9 @@ export interface CssContentConfig {
  * 负责管理自定义 CSS 编辑器及其配置
  */
 export const useCssEditorStore = defineStore(`cssEditor`, () => {
-  const isDark = useDark()
+  const isDark = useDark({
+    initialValue: `light`,
+  })
 
   // CSS 编辑器实例
   const cssEditor = ref<EditorView | null>(null)

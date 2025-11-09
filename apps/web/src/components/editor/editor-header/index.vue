@@ -228,7 +228,6 @@ async function copy() {
         <FormatDropdown />
         <EditDropdown />
         <StyleDropdown />
-        <HelpDropdown @open-about="handleOpenAbout" @open-fund="handleOpenFund" />
       </Menubar>
     </div>
 
@@ -246,7 +245,6 @@ async function copy() {
             <FormatDropdown :as-sub="true" />
             <EditDropdown :as-sub="true" />
             <StyleDropdown :as-sub="true" />
-            <HelpDropdown :as-sub="true" @open-about="handleOpenAbout" @open-fund="handleOpenFund" />
           </MenubarContent>
         </MenubarMenu>
       </Menubar>
