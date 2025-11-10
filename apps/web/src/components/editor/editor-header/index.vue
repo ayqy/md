@@ -47,10 +47,12 @@ const fundDialogVisible = ref(false)
 const editorStateDialogVisible = ref(false)
 
 // 处理帮助菜单事件
+// @ts-ignore TS6133: 暂保留入口函数
 function handleOpenAbout() {
   aboutDialogVisible.value = true
 }
 
+// @ts-ignore TS6133: 暂保留入口函数
 function handleOpenFund() {
   fundDialogVisible.value = true
 }
