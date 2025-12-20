@@ -58,6 +58,14 @@ interface Window {
     render(markdown: string): RenderResult
     configure(options: ConfigureOptions): void
   }
+
+  __AYQYMD_HOST_BRIDGE__?: {
+    /**
+     * 程序化触发与 UI「复制」按钮等价的处理流程，返回最终用于写入剪贴板的内容。
+     * 注意：该接口不会写入剪贴板（必须传 writeToClipboard:false）。
+     */
+    copyToMpHtml(opts: { writeToClipboard: false }): Promise<{ html: string }>
+  }
 }
 ```
 

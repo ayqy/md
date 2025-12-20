@@ -6,14 +6,13 @@ import { EditorView } from '@codemirror/view'
 import { highlightPendingBlocks, hljs } from '@md/core'
 import { themeMap } from '@md/shared/configs'
 import { markdownSetup, theme } from '@md/shared/editor'
-import imageCompression from 'browser-image-compression'
-import { Eye, Pen } from 'lucide-vue-next'
-import { SidebarAIToolbar } from '@/components/ai'
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from '@/components/ui/resizable'
+	import imageCompression from 'browser-image-compression'
+	import { Eye, Pen } from 'lucide-vue-next'
+	import {
+	  ResizableHandle,
+	  ResizablePanel,
+	  ResizablePanelGroup,
+	} from '@/components/ui/resizable'
 import { SearchTab } from '@/components/ui/search-tab'
 import { useCssEditorStore } from '@/stores/cssEditor'
 import { useEditorStore } from '@/stores/editor'
@@ -45,6 +44,8 @@ const {
   isOpenRightSlider,
   isOpenConfirmDialog,
   isShowCssEditor,
+  backLight,
+  isCoping,
 } = storeToRefs(uiStore)
 const { featureFlags, readOnly } = storeToRefs(integrationStore)
 
@@ -126,26 +127,10 @@ watch(
   { immediate: true },
 )
 
-const backLight = ref(false)
-const isCoping = ref(false)
-
 // 辅助函数：查找 CodeMirror 滚动容器
 function findCodeMirrorScroller(): HTMLElement | null {
   return document.querySelector<HTMLElement>(`.cm-scroller`)
     || document.querySelector<HTMLElement>(`.CodeMirror-scroll`)
-}
-
-function startCopy() {
-  backLight.value = true
-  isCoping.value = true
-}
-
-// 拷贝结束
-function endCopy() {
-  backLight.value = false
-  setTimeout(() => {
-    isCoping.value = false
-  }, 800)
 }
 
 const showEditor = ref(true)
@@ -715,10 +700,7 @@ onUnmounted(() => {
 <template>
   <div class="container flex flex-col">
     <Progress v-model="progressValue" class="absolute left-0 right-0 rounded-none" style="height: 2px;" />
-    <EditorHeader
-      @start-copy="startCopy"
-      @end-copy="endCopy"
-    />
+    <EditorHeader />
 
     <main class="container-main flex flex-1 flex-col">
       <div
@@ -743,18 +725,13 @@ onUnmounted(() => {
                 'order-1 border-l': !isEditOnLeft,
                 'border-r': isEditOnLeft,
               }"
-            >
-              <SearchTab v-if="codeMirrorView" ref="searchTabRef" :editor-view="codeMirrorView as any" />
-              <SidebarAIToolbar
-                v-if="featureFlags.ai"
-                :is-mobile="isMobile"
-                :show-editor="showEditor"
-              />
+	            >
+	              <SearchTab v-if="codeMirrorView" ref="searchTabRef" :editor-view="codeMirrorView as any" />
 
-              <EditorContextMenu>
-                <div
-                  id="editor"
-                  ref="editorRef"
+	              <EditorContextMenu>
+	                <div
+	                  id="editor"
+	                  ref="editorRef"
                   class="codemirror-container"
                 />
               </EditorContextMenu>
@@ -848,12 +825,12 @@ onUnmounted(() => {
 @import url('../assets/less/app.less');
 </style>
 
-<style lang="less" scoped>
-.container {
-  height: 100vh;
-  min-width: 100%;
-  padding: 0;
-}
+	<style lang="less" scoped>
+	.container {
+	  height: 100%;
+	  min-width: 100%;
+	  padding: 0;
+	}
 
 .container-main {
   overflow: hidden;

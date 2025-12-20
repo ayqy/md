@@ -15,20 +15,26 @@
       rel="apple-touch-icon-precomposed"
       href="https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/gh/doocs/md/images/1648303220922-7e14aefa-816e-44c1-8604-ade709ca1c69.png"
     />
-    <style>
-      .loading {
-        position: fixed;
-        top: 0;
-        left: 0;
-        z-index: 99999;
+	    <style>
+	      html,
+	      body,
+	      #app {
+	        height: 100%;
+	      }
+
+	      .loading {
+	        position: fixed;
+	        top: 0;
+	        left: 0;
+	        z-index: 99999;
         display: flex;
         flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        width: 100vw;
-        height: 100vh;
-        font-size: 18px;
-      }
+	        justify-content: center;
+	        align-items: center;
+	        width: 100vw;
+	        height: 100%;
+	        font-size: 18px;
+	      }
 
       .loading::before {
         content: url('/src/assets/images/favicon.png');

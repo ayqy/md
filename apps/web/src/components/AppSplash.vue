@@ -30,7 +30,7 @@ onMounted(() => {
   justify-content: center;
   align-items: center;
   width: 100vw;
-  height: 100vh;
+  height: 100%;
   font-size: 18px;
   background-color: hsl(var(--background));
 

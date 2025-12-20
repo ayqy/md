@@ -10,8 +10,6 @@ import { useIntegrationStore } from '@/stores/integration'
 import { addPrefix, generatePureHTML, processClipboardContent, store } from '@/utils'
 import FormatDropdown from './FormatDropdown.vue'
 
-const emit = defineEmits([`startCopy`, `endCopy`])
-
 const editorStore = useEditorStore()
 const themeStore = useThemeStore()
 const renderStore = useRenderStore()
@@ -141,7 +139,7 @@ async function copy() {
   }
 
   // 以下处理非 Markdown 的复制流程
-  emit(`startCopy`)
+  uiStore.startCopy()
 
   setTimeout(() => {
     nextTick(async () => {
@@ -151,7 +149,7 @@ async function copy() {
       if (!clipboardDiv) {
         toast.error(`未找到复制输出区域，请刷新页面后重试。`)
         editorRefresh()
-        emit(`endCopy`)
+        uiStore.endCopy()
         return
       }
 
@@ -181,7 +179,7 @@ async function copy() {
             window.getSelection()?.removeAllRanges()
             editorRefresh()
             toast.error(`复制失败，请联系开发者。${normalizeErrorMessage(error)}`)
-            emit(`endCopy`)
+            uiStore.endCopy()
             return
           }
         }
@@ -213,7 +211,7 @@ async function copy() {
         }),
       )
       editorRefresh()
-      emit(`endCopy`)
+      uiStore.endCopy()
     })
   }, 350)
 }

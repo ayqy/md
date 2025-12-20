@@ -12,6 +12,22 @@ export const useUIStore = defineStore(`ui`, () => {
   })
   const toggleDark = useToggle(isDark)
 
+  // ==================== 复制状态（用于复制到公众号的 loading-mask） ====================
+  const backLight = ref(false)
+  const isCoping = ref(false)
+
+  function startCopy() {
+    backLight.value = true
+    isCoping.value = true
+  }
+
+  function endCopy() {
+    backLight.value = false
+    setTimeout(() => {
+      isCoping.value = false
+    }, 800)
+  }
+
   // 是否在左侧编辑
   const isEditOnLeft = store.reactive(`isEditOnLeft`, true)
   const toggleEditOnLeft = useToggle(isEditOnLeft)
@@ -86,6 +102,8 @@ export const useUIStore = defineStore(`ui`, () => {
   return {
     // ==================== 全局 UI 状态 ====================
     isDark,
+    backLight,
+    isCoping,
     isEditOnLeft,
     showAIToolbox,
     hasShownAIToolboxHint,
@@ -111,6 +129,8 @@ export const useUIStore = defineStore(`ui`, () => {
 
     // ==================== Actions ====================
     toggleDark,
+    startCopy,
+    endCopy,
     toggleEditOnLeft,
     toggleAIToolbox,
     togglePinFloatingToc,
