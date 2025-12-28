@@ -52,6 +52,23 @@ const { featureFlags, readOnly } = storeToRefs(integrationStore)
 const { toggleShowUploadImgDialog, toggleAIDialog, toggleAIImageDialog } = uiStore
 const { emitChange } = integrationStore
 
+function hasHostImageUploadBridge() {
+  return (
+    typeof window !== `undefined`
+    && typeof window.__AYQYMD_IMAGE_UPLOAD_BRIDGE__?.uploadImage === `function`
+  )
+}
+
+function notifyHostImageUploadFailed(err: unknown) {
+  const message = err instanceof Error ? err.message : String(err)
+  toast(message, {
+    action: {
+      label: `去绑定`,
+      onClick: () => window.open(`/profile`, `_blank`),
+    },
+  })
+}
+
 // Editor refresh function
 function editorRefresh() {
   themeStore.updateCodeTheme()
@@ -292,6 +309,10 @@ async function beforeImageUpload(file: File) {
     return false
   }
 
+  if (hasHostImageUploadBridge()) {
+    return true
+  }
+
   // check image host
   const imgHost = (await store.get(`imgHost`)) || `default`
   await store.set(`imgHost`, imgHost)
@@ -350,6 +371,29 @@ async function uploadImage(
     if (useCompression) {
       file = await compressImage(file)
     }
+    if (hasHostImageUploadBridge()) {
+      const res = await window.__AYQYMD_IMAGE_UPLOAD_BRIDGE__!.uploadImage(file)
+      const proxyUrl = (res?.proxyUrl ?? ``).trim()
+      if (!proxyUrl) {
+        throw new Error(`粘贴图片上传失败：缺少 proxyUrl`)
+      }
+      // 必须是带域名的绝对 URL
+      // eslint-disable-next-line no-new
+      new URL(proxyUrl)
+
+      if (cb) {
+        const base64Content = await toBase64(file)
+        cb(proxyUrl, base64Content)
+      }
+      else {
+        uploaded(proxyUrl)
+      }
+      if (applyUrl) {
+        return uploaded(proxyUrl)
+      }
+      return
+    }
+
     const base64Content = await toBase64(file)
     const url = await fileUpload(base64Content, file)
     if (cb) {
@@ -363,6 +407,10 @@ async function uploadImage(
     }
   }
   catch (err) {
+    if (hasHostImageUploadBridge()) {
+      notifyHostImageUploadFailed(err)
+      return
+    }
     toast.error((err as any).message)
   }
   finally {

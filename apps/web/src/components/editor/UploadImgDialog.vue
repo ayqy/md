@@ -10,6 +10,17 @@ const emit = defineEmits([`uploadImage`])
 
 const uiStore = useUIStore()
 
+function hasHostImageUploadBridge() {
+  return (
+    typeof window !== `undefined`
+    && typeof window.__AYQYMD_IMAGE_UPLOAD_BRIDGE__?.uploadImage === `function`
+  )
+}
+
+function isHostBridgeMode() {
+  return hasHostImageUploadBridge()
+}
+
 // github
 const githubSchema = toTypedSchema(yup.object({
   repo: yup.string().required(`GitHub 仓库不能为空`),
@@ -325,6 +336,11 @@ async function beforeImageUpload(file: File) {
     toast.error(checkResult.msg)
     return false
   }
+
+  if (isHostBridgeMode()) {
+    return true
+  }
+
   // check image host
   const imgHostValue = imgHost.value || `default`
 
@@ -397,67 +413,71 @@ function emitUploads(file: File) {
 </script>
 
 <template>
-  <Dialog v-model:open="uiStore.isShowUploadImgDialog">
-    <DialogContent class="md:max-w-max max-h-[90vh] overflow-y-auto" @pointer-down-outside="ev => ev.preventDefault()">
-      <DialogHeader>
-        <DialogTitle>本地上传</DialogTitle>
-      </DialogHeader>
-      <Tabs v-model="activeName" class="w-full md:w-max">
-        <TabsList class="grid w-full overflow-x-auto grid-cols-3 md:grid-cols-none md:flex md:flex-wrap gap-1">
-          <TabsTrigger value="upload" class="text-xs md:text-sm whitespace-nowrap">
-            选择上传
-          </TabsTrigger>
-          <TabsTrigger
-            v-for="item in options.filter(item => item.value !== 'default')"
-            :key="item.value"
-            :value="item.value"
-            class="text-xs md:text-sm whitespace-nowrap"
-          >
-            {{ item.label }}
-          </TabsTrigger>
-        </TabsList>
+	  <Dialog v-model:open="uiStore.isShowUploadImgDialog">
+	    <DialogContent class="md:max-w-max max-h-[90vh] overflow-y-auto" @pointer-down-outside="ev => ev.preventDefault()">
+	      <DialogHeader>
+	        <DialogTitle>本地上传</DialogTitle>
+	      </DialogHeader>
+	      <Tabs v-model="activeName" class="w-full md:w-max">
+	        <TabsList class="grid w-full overflow-x-auto grid-cols-3 md:grid-cols-none md:flex md:flex-wrap gap-1">
+	          <TabsTrigger value="upload" class="text-xs md:text-sm whitespace-nowrap">
+	            选择上传
+	          </TabsTrigger>
+	          <template v-if="!isHostBridgeMode()">
+	            <TabsTrigger
+	              v-for="item in options.filter(item => item.value !== 'default')"
+	              :key="item.value"
+	              :value="item.value"
+	              class="text-xs md:text-sm whitespace-nowrap"
+	            >
+	              {{ item.label }}
+	            </TabsTrigger>
+	          </template>
+	        </TabsList>
 
-        <TabsContent value="upload">
-          <Label>
-            <span class="my-4 block">
-              图床
-            </span>
-            <Select v-model="imgHost" @update:model-value="changeImgHost">
-              <SelectTrigger>
-                <SelectValue placeholder="请选择" />
-              </SelectTrigger>
-              <SelectContent class="max-h-64 md:max-h-96">
-                <SelectItem
-                  v-for="item in options"
-                  :key="item.value"
-                  :label="item.label"
-                  :value="item.value"
-                >
-                  {{ item.label }}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </Label>
-          <Label label="UseCompression">
-            <span class="my-4 block">
-              开启图片压缩
-            </span>
-            <Switch
-              v-model:checked="useCompression"
-              name="UseCompression"
-              @update:checked="changeCompression"
-            />
-          </Label>
-          <div
-            class="bg-clip-padding mt-4 h-50 relative flex flex-col cursor-pointer items-center justify-evenly border-2 rounded border-dashed transition-colors hover:border-gray-700 hover:bg-gray-400/50 dark:hover:border-gray-200 dark:hover:bg-gray-500/50"
-            :class="{
-              'border-gray-700 bg-gray-400/50 dark:border-gray-200 dark:bg-gray-500/50': dragover,
-            }"
-            @click="open()"
-            @drop.prevent="onDrop"
-            @dragover.prevent="dragover = true"
-            @dragleave.prevent="dragover = false"
-          >
+	        <TabsContent value="upload">
+	          <template v-if="!isHostBridgeMode()">
+	            <Label>
+	              <span class="my-4 block">
+	                图床
+	              </span>
+	              <Select v-model="imgHost" @update:model-value="changeImgHost">
+	                <SelectTrigger>
+	                  <SelectValue placeholder="请选择" />
+	                </SelectTrigger>
+	                <SelectContent class="max-h-64 md:max-h-96">
+	                  <SelectItem
+	                    v-for="item in options"
+	                    :key="item.value"
+	                    :label="item.label"
+	                    :value="item.value"
+	                  >
+	                    {{ item.label }}
+	                  </SelectItem>
+	                </SelectContent>
+	              </Select>
+	            </Label>
+	            <Label label="UseCompression">
+	              <span class="my-4 block">
+	                开启图片压缩
+	              </span>
+	              <Switch
+	                v-model:checked="useCompression"
+	                name="UseCompression"
+	                @update:checked="changeCompression"
+	              />
+	            </Label>
+	          </template>
+	          <div
+	            class="bg-clip-padding mt-4 h-50 relative flex flex-col cursor-pointer items-center justify-evenly border-2 rounded border-dashed transition-colors hover:border-gray-700 hover:bg-gray-400/50 dark:hover:border-gray-200 dark:hover:bg-gray-500/50"
+	            :class="{
+	              'border-gray-700 bg-gray-400/50 dark:border-gray-200 dark:bg-gray-500/50': dragover,
+	            }"
+	            @click="open()"
+	            @drop.prevent="onDrop"
+	            @dragover.prevent="dragover = true"
+	            @dragleave.prevent="dragover = false"
+	          >
             <Progress v-model="progressValue" class="absolute left-0 right-0 rounded-none" style="top: -24px; height: 2px;" />
             <UploadCloud class="size-16 md:size-20" />
             <p class="text-center text-sm md:text-base px-4">
@@ -466,15 +486,16 @@ function emitUploads(file: File) {
             </p>
             <div v-if="imageUrl" class="absolute left-0 right-0 h-full w-full flex items-center justify-center bg-white dark:bg-black">
               <img :src="imageUrl" class="max-h-40 object-contain">
-            </div>
-          </div>
-        </TabsContent>
+	            </div>
+	          </div>
+	        </TabsContent>
 
-        <TabsContent value="github">
-          <Form :validation-schema="githubSchema" :initial-values="githubConfig" @submit="githubSubmit">
-            <Field v-slot="{ field, errorMessage }" name="repo">
-              <FormItem label="GitHub 仓库" required :error="errorMessage">
-                <Input
+		        <template v-if="!isHostBridgeMode()">
+	        <TabsContent value="github">
+	          <Form :validation-schema="githubSchema" :initial-values="githubConfig" @submit="githubSubmit">
+	            <Field v-slot="{ field, errorMessage }" name="repo">
+	              <FormItem label="GitHub 仓库" required :error="errorMessage">
+	                <Input
                   v-bind="field"
                   v-model="field.value"
                   placeholder="如：github.com/yanglbme/resource"
@@ -511,22 +532,22 @@ function emitUploads(file: File) {
                 href="https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token"
                 target="_blank"
               >
-                如何获取 GitHub Token？
-              </Button>
-            </FormItem>
+	                如何获取 GitHub Token？
+	              </Button>
+	            </FormItem>
 
             <FormItem>
               <Button type="submit">
                 保存配置
               </Button>
             </FormItem>
-          </Form>
-        </TabsContent>
+	          </Form>
+		        </TabsContent>
 
-        <TabsContent value="aliOSS">
-          <Form :validation-schema="aliOSSSchema" :initial-values="aliOSSConfig" @submit="aliOSSSubmit">
-            <Field v-slot="{ field, errorMessage }" name="accessKeyId">
-              <FormItem label="AccessKey ID" required :error="errorMessage">
+	        <TabsContent value="aliOSS">
+	          <Form :validation-schema="aliOSSSchema" :initial-values="aliOSSConfig" @submit="aliOSSSubmit">
+	            <Field v-slot="{ field, errorMessage }" name="accessKeyId">
+	              <FormItem label="AccessKey ID" required :error="errorMessage">
                 <Input
                   v-bind="field"
                   v-model="field.value"
@@ -1158,10 +1179,11 @@ function emitUploads(file: File) {
           </Form>
         </TabsContent>
 
-        <TabsContent value="formCustom" class="grid">
-          <CustomUploadForm />
-        </TabsContent>
-      </Tabs>
+	        <TabsContent value="formCustom" class="grid">
+	          <CustomUploadForm />
+	        </TabsContent>
+	        </template>
+	      </Tabs>
     </DialogContent>
   </Dialog>
 </template>

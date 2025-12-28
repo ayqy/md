@@ -7,4 +7,8 @@ interface Window {
       errCb: (err: any) => void
     }) => void
   }
+
+  __AYQYMD_IMAGE_UPLOAD_BRIDGE__?: {
+    uploadImage: (file: File) => Promise<{ proxyUrl: string }>
+  }
 }
