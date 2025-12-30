@@ -418,6 +418,53 @@ async function uploadImage(
   }
 }
 
+function extractErrorMessage(err: unknown): string {
+  if (!err) return ``
+  if (err instanceof Error) return err.message || ``
+  if (typeof err === `string`) return err
+  try {
+    return String((err as any).message || err)
+  }
+  catch {
+    return ``
+  }
+}
+
+function showWechatBindHintIfNeeded(message: string) {
+  if (!message || !message.includes(`/profile`)) {
+    return false
+  }
+
+  // 使用带 action 的 toast（vue-sonner 支持），让用户可点击跳转绑定页
+  ;(toast as any)(message, {
+    action: {
+      label: `去绑定`,
+      onClick: () => window.open(`/profile`, `_blank`),
+    },
+  })
+  return true
+}
+
+async function uploadImageViaHostBridge(file: File): Promise<string | null> {
+  const bridge = (window as any)?.__AYQYMD_IMAGE_UPLOAD_BRIDGE__
+  if (!bridge?.uploadImage) {
+    return null
+  }
+
+  isImgLoading.value = true
+  try {
+    const result = await bridge.uploadImage(file)
+    const proxyUrl = (result?.proxyUrl ?? ``).toString().trim()
+    if (!proxyUrl) {
+      throw new Error(`粘贴图片上传失败：缺少 proxyUrl`)
+    }
+    return proxyUrl
+  }
+  finally {
+    isImgLoading.value = false
+  }
+}
+
 // 从文件列表中查找一个 md 文件并解析
 async function getMd({ list }: { list: { path: string, file: File }[] }) {
   return new Promise<{ str: string, file: File, path: string }>((resolve) => {
@@ -537,6 +584,21 @@ function mdLocalToRemote() {
             const file = await handle.getFile()
             console.log(`file`, file)
             if (await beforeImageUpload(file)) {
+              try {
+                const proxyUrl = await uploadImageViaHostBridge(file)
+                if (proxyUrl) {
+                  uploaded(proxyUrl)
+                  return
+                }
+              }
+              catch (err) {
+                const message = extractErrorMessage(err) || `上传图片失败`
+                if (!showWechatBindHintIfNeeded(message)) {
+                  toast.error(message)
+                }
+                return
+              }
+
               uploadImage(file)
             }
           }
@@ -595,6 +657,13 @@ function createFormTextArea(dom: HTMLDivElement) {
     if (!(event.clipboardData?.items) || isImgLoading.value) {
       return
     }
+    // 如果剪贴板里包含图片文件，尽早阻止默认粘贴行为，避免后续再次插入导致重复内容
+    const hasImageFile = [...event.clipboardData.items].some(
+      item => item.kind === `file` && (item.type || ``).startsWith(`image/`),
+    )
+    if (hasImageFile) {
+      event.preventDefault()
+    }
     const items = await Promise.all(
       [...event.clipboardData.items]
         .map(item => item.getAsFile())
@@ -615,7 +684,21 @@ function createFormTextArea(dom: HTMLDivElement) {
       progressValue.value = newProgress
     }, 100)
     for (const item of validItems) {
-      event.preventDefault()
+      try {
+        const proxyUrl = await uploadImageViaHostBridge(item)
+        if (proxyUrl) {
+          uploaded(proxyUrl)
+          continue
+        }
+      }
+      catch (err) {
+        const message = extractErrorMessage(err) || `粘贴图片上传失败`
+        if (!showWechatBindHintIfNeeded(message)) {
+          toast.error(message)
+        }
+        continue
+      }
+
       await uploadImage(item)
     }
     const cleanup = () => {
