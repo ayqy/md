@@ -11,6 +11,9 @@ export interface FeatureFlags {
   cssEditor: boolean
   exportPanel: boolean
   uploadImage: boolean
+  writeAiCreate: boolean
+  writeAiPolish: boolean
+  writeAiIllustrate: boolean
 }
 
 export const defaultFeatureFlags: FeatureFlags = {
@@ -19,6 +22,9 @@ export const defaultFeatureFlags: FeatureFlags = {
   cssEditor: true,
   exportPanel: true,
   uploadImage: true,
+  writeAiCreate: false,
+  writeAiPolish: false,
+  writeAiIllustrate: false,
 }
 
 export const useIntegrationStore = defineStore(`integration`, () => {

@@ -9,6 +9,7 @@ import { useUIStore } from '@/stores/ui'
 import { useIntegrationStore } from '@/stores/integration'
 import { addPrefix, generatePureHTML, processClipboardContent, store } from '@/utils'
 import FormatDropdown from './FormatDropdown.vue'
+import WriteAssistActions from './WriteAssistActions.vue'
 
 const editorStore = useEditorStore()
 const themeStore = useThemeStore()
@@ -252,6 +253,7 @@ async function copy() {
 
     <!-- 右侧操作区 -->
     <div v-if="featureFlags.exportPanel" class="space-x-2 flex flex-wrap items-center">
+      <WriteAssistActions />
       <!-- 复制按钮组 -->
       <div
         class="bg-background space-x-1 text-background-foreground flex items-center border rounded-md"
