@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { useEditorStore } from '@/stores/editor'
 import { useIntegrationStore } from '@/stores/integration'
 import { toast } from '@/utils/toast'
+import { Undo2 } from 'lucide-vue-next'
 
 type WriteAssistAction = 'create' | 'polish' | 'illustrate'
 
@@ -115,52 +116,70 @@ function discard() {
 <template>
   <div v-if="showAny" class="flex flex-wrap items-center gap-2">
     <template v-if="showCreate">
-      <div class="flex items-center gap-1">
-        <Button variant="outline" class="h-8 px-3 text-sm" :disabled="isBusy" @click="runAction('create')">
+      <div class="flex items-center gap-0">
+        <Button
+          variant="outline"
+          class="h-8 px-3 text-sm"
+          :class="{ 'rounded-r-none': activeAction === 'create' }"
+          :disabled="isBusy"
+          @click="runAction('create')"
+        >
           {{ labelFor('create') }}
         </Button>
         <Button
           v-if="activeAction === 'create'"
-          variant="ghost"
-          class="h-8 px-2 text-sm"
+          variant="outline"
+          class="h-8 px-2 text-sm rounded-l-none border-l-0 text-red-500 hover:text-red-600 bg-red-50 hover:bg-red-100"
           :disabled="isBusy"
           @click="discard"
         >
-          丢弃
+          <Undo2 class="size-4" />
         </Button>
       </div>
     </template>
 
     <template v-if="showPolish">
-      <div class="flex items-center gap-1">
-        <Button variant="outline" class="h-8 px-3 text-sm" :disabled="isBusy" @click="runAction('polish')">
+      <div class="flex items-center gap-0">
+        <Button
+          variant="outline"
+          class="h-8 px-3 text-sm"
+          :class="{ 'rounded-r-none': activeAction === 'polish' }"
+          :disabled="isBusy"
+          @click="runAction('polish')"
+        >
           {{ labelFor('polish') }}
         </Button>
         <Button
           v-if="activeAction === 'polish'"
-          variant="ghost"
-          class="h-8 px-2 text-sm"
+          variant="outline"
+          class="h-8 px-2 text-sm rounded-l-none border-l-0 text-red-500 hover:text-red-600 bg-red-50 hover:bg-red-100"
           :disabled="isBusy"
           @click="discard"
         >
-          丢弃
+          <Undo2 class="size-4" />
         </Button>
       </div>
     </template>
 
     <template v-if="showIllustrate">
-      <div class="flex items-center gap-1">
-        <Button variant="outline" class="h-8 px-3 text-sm" :disabled="isBusy" @click="runAction('illustrate')">
+      <div class="flex items-center gap-0">
+        <Button
+          variant="outline"
+          class="h-8 px-3 text-sm"
+          :class="{ 'rounded-r-none': activeAction === 'illustrate' }"
+          :disabled="isBusy"
+          @click="runAction('illustrate')"
+        >
           {{ labelFor('illustrate') }}
         </Button>
         <Button
           v-if="activeAction === 'illustrate'"
-          variant="ghost"
-          class="h-8 px-2 text-sm"
+          variant="outline"
+          class="h-8 px-2 text-sm rounded-l-none border-l-0 text-red-500 hover:text-red-600 bg-red-50 hover:bg-red-100"
           :disabled="isBusy"
           @click="discard"
         >
-          丢弃
+          <Undo2 class="size-4" />
         </Button>
       </div>
     </template>
