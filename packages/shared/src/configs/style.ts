@@ -236,8 +236,10 @@ export const defaultStyleConfig = {
   isCountStatus: false,
   theme: themeOptions[0].value,
   fontFamily: fontFamilyOptions[0].value,
-  fontSize: fontSizeOptions[2].value,
-  primaryColor: colorOptions[0].value,
+  // 默认字号：稍小（15px）
+  fontSize: fontSizeOptions[1].value,
+  // 默认主题色：自定义（避免无头环境下 localStorage 不可用导致样式不一致）
+  primaryColor: `rgba(255, 169, 0, 1)`,
   codeBlockTheme: codeBlockThemeOptions[23].value,
   legend: legendOptions[3].value,
 }

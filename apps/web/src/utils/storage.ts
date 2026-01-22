@@ -6,6 +6,16 @@
 import type { Ref } from 'vue'
 import { customRef, ref, watch } from 'vue'
 
+const getSafeLocalStorage = (): Storage | null => {
+  try {
+    if (typeof window === `undefined`) return null
+    return window.localStorage
+  }
+  catch {
+    return null
+  }
+}
+
 /**
  * 存储引擎接口 - 完全异步化
  */
@@ -21,60 +31,115 @@ export interface StorageEngine {
 /**
  * 本地存储引擎 - 使用 localStorage
  */
+export class MemoryStorageEngine implements StorageEngine {
+  private readonly map = new Map<string, string>()
+
+  async get(key: string): Promise<string | null> {
+    return this.map.has(key) ? (this.map.get(key) ?? null) : null
+  }
+
+  async set(key: string, value: string): Promise<void> {
+    this.map.set(key, value)
+  }
+
+  async remove(key: string): Promise<void> {
+    this.map.delete(key)
+  }
+
+  async has(key: string): Promise<boolean> {
+    return this.map.has(key)
+  }
+
+  async clear(): Promise<void> {
+    this.map.clear()
+  }
+
+  async keys(): Promise<string[]> {
+    return Array.from(this.map.keys())
+  }
+}
+
 export class LocalStorageEngine implements StorageEngine {
+  private readonly fallback = new MemoryStorageEngine()
+
+  getSync(key: string): string | null {
+    const ls = getSafeLocalStorage()
+    if (!ls) return null
+    try {
+      return ls.getItem(key)
+    }
+    catch {
+      return null
+    }
+  }
+
   async get(key: string): Promise<string | null> {
     try {
-      return localStorage.getItem(key)
+      const ls = getSafeLocalStorage()
+      if (!ls) return await this.fallback.get(key)
+      return ls.getItem(key)
     }
     catch (error) {
       console.error(`[Storage] Failed to get item:`, key, error)
-      return null
+      return await this.fallback.get(key)
     }
   }
 
   async set(key: string, value: string): Promise<void> {
     try {
-      localStorage.setItem(key, value)
+      const ls = getSafeLocalStorage()
+      if (!ls) return await this.fallback.set(key, value)
+      ls.setItem(key, value)
     }
     catch (error) {
       console.error(`[Storage] Failed to set item:`, key, error)
-      throw error
+      return await this.fallback.set(key, value)
     }
   }
 
   async remove(key: string): Promise<void> {
     try {
-      localStorage.removeItem(key)
+      const ls = getSafeLocalStorage()
+      if (!ls) return await this.fallback.remove(key)
+      ls.removeItem(key)
     }
     catch (error) {
       console.error(`[Storage] Failed to remove item:`, key, error)
+      await this.fallback.remove(key)
     }
   }
 
   async has(key: string): Promise<boolean> {
     try {
-      return localStorage.getItem(key) !== null
+      const ls = getSafeLocalStorage()
+      if (!ls) return await this.fallback.has(key)
+      return ls.getItem(key) !== null
     }
     catch {
-      return false
+      return await this.fallback.has(key)
     }
   }
 
   async clear(): Promise<void> {
     try {
-      localStorage.clear()
+      const ls = getSafeLocalStorage()
+      if (!ls) return await this.fallback.clear()
+      ls.clear()
     }
     catch (error) {
       console.error(`[Storage] Failed to clear storage:`, error)
+      await this.fallback.clear()
     }
   }
 
   async keys(): Promise<string[]> {
     try {
-      return Object.keys(localStorage)
+      const ls = getSafeLocalStorage()
+      if (!ls) return await this.fallback.keys()
+      return Object.keys(ls)
     }
     catch {
-      return []
+      return await this.fallback.keys()
     }
   }
 }
@@ -258,7 +323,7 @@ class StorageManager {
     // LocalStorageEngine 同步读取初始值
     if (this.engine instanceof LocalStorageEngine) {
       try {
-        const stored = localStorage.getItem(key)
+        const stored = this.engine.getSync(key)
         if (stored !== null) {
           initialValue = isStringType ? (stored as T) : this.parseJSON(stored, defaultValue)
         }

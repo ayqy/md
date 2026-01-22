@@ -73,6 +73,15 @@ const bridgeReady = new Promise<void>((resolve) => {
 const raf = () => new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
 const delay = (ms: number) => new Promise<void>(resolve => window.setTimeout(resolve, ms))
 
+const getSafeLocalStorage = (): Storage | null => {
+  try {
+    return window.localStorage
+  }
+  catch {
+    return null
+  }
+}
+
 async function waitForEditorRuntime(pinia: Pinia) {
   // 等待 editor view 挂载、renderer 初始化、以及 #output DOM 存在
   // 不设超时：未就绪时允许一直 pending（由宿主策略决定何时创建编辑器）
@@ -196,7 +205,8 @@ async function copyToMpHtml(opts: { writeToClipboard: false }): Promise<{ html: 
   const raw = editorStore.getContent()
 
   const copyModeKey = addPrefix(`copyMode`)
-  const copyMode = (localStorage.getItem(copyModeKey) || `txt`) as
+  const ls = getSafeLocalStorage()
+  const copyMode = ((ls ? ls.getItem(copyModeKey) : null) || `txt`) as
     | `txt`
     | `html`
     | `html-without-style`
